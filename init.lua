@@ -418,6 +418,9 @@ require('lazy').setup({
             require('telescope.themes').get_dropdown(),
           },
         },
+        defaults = {
+          file_ignore_patterns = { '%.defold', '%.idea', '%.vscode', '%.tools', '.defold/api', '%.git', '%.internal', '%build' },
+        },
       }
 
       -- Enable Telescope extensions if they are installed
