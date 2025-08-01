@@ -683,7 +683,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
-
+        ols = {},
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -733,6 +733,15 @@ require('lazy').setup({
           end,
         },
       }
+
+      require('lspconfig').ols.setup {
+        init_options = {
+          checker_args = '-strict-style',
+          collections = {
+            { name = 'shared', path = vim.fn.expand '$HOME/odin-lib' },
+          },
+        },
+      }
     end,
   },
 
@@ -768,11 +777,21 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+
+        odin = { 'odinfmt' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
         -- You can use 'stop_after_first' to run the first available formatter from the list
         -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      },
+      formatters = {
+        odinfmt = {
+          -- Change where to find the command if it isn't in your path.
+          command = 'odinfmt',
+          args = { '-stdin' },
+          stdin = true,
+        },
       },
     },
   },
@@ -854,7 +873,7 @@ require('lazy').setup({
       },
 
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'lazydev' },
+        default = { 'lsp', 'path', 'snippets', 'lazydev', 'ols' },
         providers = {
           lazydev = { module = 'lazydev.integrations.blink', score_offset = 100 },
         },
