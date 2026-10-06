@@ -207,6 +207,39 @@ vim.keymap.set("n", "<C-k>", "<C-w><C-k>", { desc = "Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+-- Jump to next/previous function using treesitter
+local function jump_to_function(forward)
+  local ts = vim.treesitter
+  local parser = ts.get_parser()
+  if not parser then return end
+
+  local root = parser:parse()[1]:root()
+  local query = ts.query.parse(vim.bo.filetype, '(function_declaration) @func (function_definition) @func')
+  local cur_row = vim.api.nvim_win_get_cursor(0)[1] - 1
+
+  local target = nil
+  for id, node, _ in query:iter_captures(root, 0) do
+    local row = node:start()
+    if forward then
+      if row > cur_row then
+        target = row
+        break
+      end
+    else
+      if row < cur_row then
+        target = row
+      end
+    end
+  end
+
+  if target then
+    vim.api.nvim_win_set_cursor(0, { target + 1, 0 })
+  end
+end
+
+vim.keymap.set("n", "]f", function() jump_to_function(true) end, { desc = "Jump to next function" })
+vim.keymap.set("n", "[f", function() jump_to_function(false) end, { desc = "Jump to previous function" })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -698,6 +731,14 @@ require("lazy").setup({
               completion = {
                 callSnippet = "Replace",
               },
+              format = {
+                enable = true,
+                defaultConfig = {
+                  max_line_length = "1000",
+                  auto_collapse_lines = "false",
+                  break_all_list_when_line_exceed = "false",
+                },
+              },
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
@@ -882,15 +923,15 @@ require("lazy").setup({
     },
   },
 
-  {
-    "monkoose/DoNe",
-    -- optional configuration
-    config = function()
-      -- as example adding some keybindings
-      vim.keymap.set("n", "<F5>", "<Cmd>DoNe build<CR>")
-      --- ...
-    end,
-  },
+  -- {
+  --   "monkoose/DoNe",
+  --   -- optional configuration
+  --   config = function()
+  --     -- as example adding some keybindings
+  --     vim.keymap.set("n", "<F5>", "<Cmd>DoNe build<CR>")
+  --     --- ...
+  --   end,
+  -- },
 
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
@@ -995,7 +1036,49 @@ require("lazy").setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
+  {
+    "atomicptr/defold.nvim",
+    version = '*',
+    lazy = false,
 
+    dependencies = {
+      -- (Optional) Required when using the debugger
+      "mfussenegger/nvim-dap",
+
+      -- (Optional) Required when using snippets
+      "L3MON4D3/LuaSnip",
+    },
+
+    -- This makes sure the native library downloads at installation
+    build = function()
+      require("defold").download()
+    end,
+
+    opts = {
+      defold = {
+        set_default_editor = true,
+        auto_fetch_dependencies = true,
+        hot_reload_enabled = true,
+      },
+      launcher = {
+        type = "neovide",
+      },
+      debugger = {
+        enable = true,
+      },
+      quickfix = {
+        enable = true,
+        min_severity = "error",
+        open_list = true,
+      },
+      game_runner = {
+        mode = "make",
+        show_logs = true,
+      },
+      setup_make = true,
+      force_plugin_enabled = false,
+    },
+  }
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
